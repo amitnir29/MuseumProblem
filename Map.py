@@ -1,4 +1,5 @@
 from typing import List, Tuple, Set
+from itertools import combinations
 
 from Line import Line
 from Point import Point
@@ -11,16 +12,12 @@ class Map:
         self.corners: List[Point] = corners
         self.walls: List[Line] = self.create_walls(corners)
         self.net: List[Point] = self.create_net()
+        self.calc_seen_by()
 
     def create_walls(self, corners: List[Point]) -> List[Line]:
         walls: List[Line] = []
-        for i in range(len(corners) - 1):
-            walls.append(Line(corners[i], corners[i + 1]))
-            corners[i].walls_on.append(walls[-1])
-            corners[i + 1].walls_on.append(walls[-1])
-        walls.append(Line(corners[-1], corners[0]))
-        corners[0].walls_on.append(walls[-1])
-        corners[-1].walls_on.append(walls[-1])
+        for i in range(len(corners)):
+            walls.append(Line(corners[i - 1], corners[i]))
         return walls
 
     def create_net(self) -> List[Point]:
@@ -29,10 +26,10 @@ class Map:
 
     def get_wall_points(self) -> List[Point]:
         wall_points: List[Point] = []
-        for wall in self.walls:
+        for i, wall in enumerate(self.walls):
             start, end = wall.p1, wall.p2
+            wall_points.append(Point(start.x, start.y, [wall, self.walls[i - 1]]))
             while start.x != end.x or start.y != end.y:
-                wall_points.append(start)
                 if start.x == end.x:
                     if start.y < end.y:
                         start = Point(start.x, start.y + 1, [wall])
@@ -43,6 +40,7 @@ class Map:
                         start = Point(start.x + 1, start.y, [wall])
                     else:
                         start = Point(start.x - 1, start.y, [wall])
+                wall_points.append(Point(start.x, start.y, [wall]))
         return wall_points
 
     def get_inner_neighbors(self, p: Point, wall_points: Set[Tuple[int, int]]) -> \
@@ -106,7 +104,12 @@ class Map:
                 p = j, i
                 if p in net_coordinates:
                     if p in wall_coordinates:
-                        print("0 ", end="")
+                        for p2 in self.get_wall_points():
+                            if p2.x == p[0] and p2.y == p[1] and len(p2.walls_on) == 2:
+                                print("8 ", end="")
+                                break
+                        else:
+                            print("0 ", end="")
                     else:
                         print("+ ", end="")
                 else:
@@ -117,3 +120,9 @@ class Map:
         for i in range(len(corners)):
             corners[i].x *= acc
             corners[i].y *= acc
+
+    def calc_seen_by(self) -> None:
+        for p1, p2 in combinations(self.net, 2):
+            line = Line(p1, p2)
+            intersections = []
+        pass

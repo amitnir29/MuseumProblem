@@ -26,6 +26,6 @@ if __name__ == '__main__':
              Point(1, 3),
              Point(-2, 3),
              Point(-2, 2),
-             Point(0, 2)], 8)
+             Point(0, 2)], 4)
     m.print()
     print(m.net)
