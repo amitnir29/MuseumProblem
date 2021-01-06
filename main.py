@@ -1,9 +1,14 @@
 from Map import Map
+from Point import Point
 from pickle_help import *
+from optimization import optim
 
 if __name__ == '__main__':
-    m: Map = pickle_from_file("museums/shape5/acc3")
-    m.print_seen(6, 10)
+    m: Map = pickle_from_file("museums/shape4/acc3")
+    m.print()
+    s = optim(m)
+    print(s)
+    m.print_guards(s)
 
 """
 create new map

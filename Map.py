@@ -12,7 +12,7 @@ class Map:
         self.expand(corners, acc)
         self.corners: List[Point] = corners  # a list of all corners of the museum
         self.walls: List[Line] = self.create_walls(corners)  # a list of all lines of the museum
-        self.inner_points: Set[Point] = set()  # a set of all points that can have a guard
+        self.guards_points: Set[Point] = set()  # a set of all points that can have a guard
         self.wall_points: Set[Point] = set()  # a st of all points that are on a wall
         self.net: Set[Point] = set()  # a set of all points
         self.create_net()  # call the map creation
@@ -33,8 +33,8 @@ class Map:
         call the functions that create the net points
         """
         self.wall_points: Set[Point] = self.get_wall_points()
-        self.inner_points: Set[Point] = self.get_inner_points()
-        self.net: Set[Point] = self.wall_points.union(self.inner_points)
+        self.guards_points: Set[Point] = self.get_inner_points()
+        self.net: Set[Point] = self.wall_points.union(self.guards_points)
 
     def get_wall_points(self) -> Set[Point]:
         """
@@ -223,6 +223,37 @@ class Map:
                         print("- ", end="")
             print()
 
+    def print_guards(self,guards:Set[Point]):
+        net_coordinates: Dict[Tuple[int, int], Point] = self.coordinates_dict(self.net)
+        wall_coordinates: Dict[Tuple[int, int], Point] = self.coordinates_dict(self.wall_points)
+        guards_cooridnates:Dict[Tuple[int,int],Point] = self.coordinates_dict(guards)
+        min_x = min([p.x for p in self.corners])
+        min_y = min([p.y for p in self.corners])
+        max_x = max([p.x for p in self.corners])
+        max_y = max([p.y for p in self.corners])
+        # go over the range of possible points in the museum
+        for i in range(max_y, min_y - 1, -1):
+            for j in range(min_x, max_x + 1):
+                p = j, i
+                # get position of point relative to the museum, to get the char that represents the role of the point
+                if p in net_coordinates:
+                    if p in wall_coordinates:
+                        for p2 in self.get_wall_points():
+                            if p2.x == p[0] and p2.y == p[1] and len(p2.walls_on) == 2:
+                                print("8 ", end="")
+                                break
+                        else:
+                            print("0 ", end="")
+                    else:
+                        if p in guards_cooridnates:
+                            print(bcolors.OKGREEN + "G " + bcolors.ENDC, end="")
+                        else:
+                            print("+ ", end="")
+                else:
+                    print("- ", end="")
+            print()
+
+
     def expand(self, corners: List[Point], acc: int) -> None:
         """
         expand the corners by the expansion factor
@@ -239,7 +270,7 @@ class Map:
         :return: a set of points that see the input point
         """
         seen_by: Set[Point] = set()
-        for guard in self.inner_points:
+        for guard in self.guards_points:
             # for each possible guard point
             guard: Point
             line = Line(guard, point)
