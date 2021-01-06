@@ -1,5 +1,6 @@
 from __future__ import annotations
-from typing import List, Tuple, NamedTuple
+
+from typing import Tuple
 
 import Line
 
@@ -13,7 +14,13 @@ class Point:
         self.walls_on: Tuple[Line.Line] = walls_on
 
     def get_coordinates(self) -> (int, int):
+        """
+        :return: return the (x,y) values of the point
+        """
         return self.x, self.y
 
     def __repr__(self):
+        """
+        :return: a representation form of the point
+        """
         return str(self.x) + "," + str(self.y)
