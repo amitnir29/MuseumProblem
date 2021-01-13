@@ -1,12 +1,10 @@
 from typing import List, Tuple, Set, Dict, Iterable, Union
 
-from distributed.deploy.old_ssh import bcolors
-
 from Line import Line
 from Point import Point
 
 
-class Map:
+class Museum:
     def __init__(self, corners: List[Point], acc: int):
         self.acc: int = acc  # accuracy level of the map, number of points per 1 length
         self.expand(corners, acc)
@@ -142,118 +140,6 @@ class Map:
         """
         return Point(min([p.x for p in self.corners]), min([p.y for p in self.corners]))
 
-    def print(self):
-        """
-        print the museum grid
-        """
-        net_coordinates: Dict[Tuple[int, int], Point] = self.coordinates_dict(self.net)
-        wall_coordinates: Dict[Tuple[int, int], Point] = self.coordinates_dict(self.wall_points)
-        min_x = min([p.x for p in self.corners])
-        min_y = min([p.y for p in self.corners])
-        max_x = max([p.x for p in self.corners])
-        max_y = max([p.y for p in self.corners])
-        # go over the range of possible points in the museum
-        for i in range(max_y, min_y - 1, -1):
-            for j in range(min_x, max_x + 1):
-                p = j, i
-                # get position of point relative to the museum, to get the char that represents the role of the point
-                if p in net_coordinates:
-                    if p in wall_coordinates:
-                        for p2 in self.get_wall_points():
-                            if p2.x == p[0] and p2.y == p[1] and len(p2.walls_on) == 2:
-                                print("8 ", end="")
-                                break
-                        else:
-                            print("0 ", end="")
-                    else:
-                        print("+ ", end="")
-                else:
-                    print("- ", end="")
-            print()
-
-    def print_seen(self, point_x: int, point_y: int):
-        """
-        print the museum grid, and mark the input point and all points that see the input point
-        :param point_x: x value of the input
-        :param point_y: y value of the point
-        """
-        point = self.point_from_coordinates(point_x, point_y)
-        if point not in self.net:
-            print("not inside map")
-            return
-        net_coordinates: Dict[Tuple[int, int], Point] = self.coordinates_dict(self.net)
-        wall_coordinates: Dict[Tuple[int, int], Point] = self.coordinates_dict(self.wall_points)
-        seen_by_coordinates: Dict[Tuple[int, int], Point] = self.coordinates_dict(self.calc_seen_by(point))
-        min_x = min([p.x for p in self.corners])
-        min_y = min([p.y for p in self.corners])
-        max_x = max([p.x for p in self.corners])
-        max_y = max([p.y for p in self.corners])
-        # go over the range of possible points in the museum
-        for i in range(max_y, min_y - 1, -1):
-            for j in range(min_x, max_x + 1):
-                p = j, i
-                # get position of point relative to the museum, to get the char that represents the role of the point
-                if p[0] == point.x and p[1] == point.y:
-                    # this is the input point
-                    print(bcolors.OKGREEN + "X " + bcolors.ENDC, end="")
-                else:
-                    if p in net_coordinates:
-                        if p in wall_coordinates:
-                            for p2 in self.get_wall_points():
-                                if p2.x == p[0] and p2.y == p[1] and len(p2.walls_on) == 2:
-                                    if p2.get_coordinates() in seen_by_coordinates:
-                                        # mark the point, it sees the input point
-                                        print(bcolors.WARNING + "8 " + bcolors.ENDC, end="")
-                                    else:
-                                        print("8 ", end="")
-                                    break
-                            else:
-                                if p in seen_by_coordinates:
-                                    # mark the point, it sees the input point
-                                    print(bcolors.WARNING + "0 " + bcolors.ENDC, end="")
-                                else:
-                                    print("0 ", end="")
-                        else:
-                            if p in seen_by_coordinates:
-                                # mark the point, it sees the input point
-                                print(bcolors.WARNING + "+ " + bcolors.ENDC, end="")
-                            else:
-                                print("+ ", end="")
-                    else:
-                        print("- ", end="")
-            print()
-
-    def print_guards(self,guards:Set[Point]):
-        net_coordinates: Dict[Tuple[int, int], Point] = self.coordinates_dict(self.net)
-        wall_coordinates: Dict[Tuple[int, int], Point] = self.coordinates_dict(self.wall_points)
-        guards_cooridnates:Dict[Tuple[int,int],Point] = self.coordinates_dict(guards)
-        min_x = min([p.x for p in self.corners])
-        min_y = min([p.y for p in self.corners])
-        max_x = max([p.x for p in self.corners])
-        max_y = max([p.y for p in self.corners])
-        # go over the range of possible points in the museum
-        for i in range(max_y, min_y - 1, -1):
-            for j in range(min_x, max_x + 1):
-                p = j, i
-                # get position of point relative to the museum, to get the char that represents the role of the point
-                if p in net_coordinates:
-                    if p in wall_coordinates:
-                        for p2 in self.get_wall_points():
-                            if p2.x == p[0] and p2.y == p[1] and len(p2.walls_on) == 2:
-                                print("8 ", end="")
-                                break
-                        else:
-                            print("0 ", end="")
-                    else:
-                        if p in guards_cooridnates:
-                            print(bcolors.OKGREEN + "G " + bcolors.ENDC, end="")
-                        else:
-                            print("+ ", end="")
-                else:
-                    print("- ", end="")
-            print()
-
-
     def expand(self, corners: List[Point], acc: int) -> None:
         """
         expand the corners by the expansion factor
@@ -280,6 +166,25 @@ class Map:
             # if not, add to the set
             if len(intersections) == 0:
                 seen_by.add(guard)
+        return seen_by
+
+    def calc_see(self, guard: Point) -> Set[Point]:
+        """
+        :param guard: an input inner point
+        :return: a set of points that are seen by the input point
+        """
+        if guard not in self.guards_points:
+            return set()
+        seen_by: Set[Point] = self.calc_seen_by(guard)
+        # add the wall points that are seen by guard
+        for wp in self.wall_points:
+            line = Line(guard, wp)
+            # check if the line between the input point and the guard point intersects with a wall or not
+            intersections = [wall for wall in self.walls if line.is_intersecting(wall)]
+            intersections = [wall for wall in intersections if wall not in wp.walls_on]
+            # if not, add to the set
+            if len(intersections) == 0:
+                seen_by.add(wp)
         return seen_by
 
     def point_from_coordinates(self, x, y) -> Union[None, Point]:

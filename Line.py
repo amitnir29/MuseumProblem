@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Optional
+
 from Point import Point
 from math import inf
 
@@ -90,3 +92,21 @@ class Line:
         inter_y: float = m1 * inter_x + b1
         # return True if the point of intersection is exactly on the line cuts that are self and other
         return self.is_in_range(inter_x, inter_y) and other.is_in_range(inter_x, inter_y)
+
+    def walls_intersection_point(self, other: Line) -> Optional[Point]:
+        """
+        intersecting between walls where one of them is parallel to x axis
+        and the second one is parallel to the y axis
+        :param other: other line
+        :return: intersecting point of the walls. None if no intersection
+        """
+        if not self.is_intersecting(other):
+            return None
+        if self.slope() == other.slope():
+            return None
+        parallel_x = self if self.slope() == 0 else other
+        parallel_y = self if other.slope() == 0 else other
+        return Point(parallel_y.p1.x, parallel_x.p1.y)
+
+    def __repr__(self):
+        return repr(self.p1) + "<->" + repr(self.p2)

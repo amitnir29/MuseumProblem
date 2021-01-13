@@ -1,12 +1,12 @@
 from typing import Set, Dict
 
-from pulp import LpMaximize, LpProblem, LpStatus, lpSum, LpVariable, LpMinimize, LpSolver
+from pulp import LpProblem, lpSum, LpVariable, LpMinimize
 
-from Map import Map
+from Museum import Museum
 from Point import Point
 
 
-def optim(museum: Map) -> Set[Point]:
+def naive_optim(museum: Museum) -> Set[Point]:
     # init the model
     model = LpProblem(name="min_guards_coverage", sense=LpMinimize)
     # create variables:
@@ -27,3 +27,18 @@ def optim(museum: Map) -> Set[Point]:
     print(f"objective: {model.objective.value()}")
 
     return {p for p in inner_points if inner_points[p].value() != 0}
+
+
+def greedy_algo(museum: Museum) -> Set[Point]:
+    seen: Set[Point] = set()
+    chosen_guards: Set[Point] = set()
+    seen_for_guard: Dict[Point, Set[Point]] = {guard: museum.calc_see(guard) for guard in museum.guards_points}
+    while len(seen) != len(museum.net):
+        sees_most = max(set(museum.guards_points).difference(chosen_guards),
+                        key=lambda guard: len(seen_for_guard[guard].difference(seen)))
+        chosen_guards.add(sees_most)
+        seen.update(museum.calc_see(sees_most))
+
+    print("number of guards:", len(chosen_guards))
+    return chosen_guards
+
