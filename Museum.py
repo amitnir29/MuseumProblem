@@ -1,3 +1,4 @@
+from math import inf
 from typing import List, Tuple, Set, Dict, Iterable, Union
 
 from Line import Line
@@ -6,6 +7,10 @@ from Point import Point
 
 class Museum:
     def __init__(self, corners: List[Point], acc: int):
+        if not (type(acc) == int or (type(acc) == float and float(acc).is_integer())):
+            raise Exception("acc should be an integer")
+        if acc < 2:
+            raise Exception("acc should be at least 2")
         self.acc: int = acc  # accuracy level of the map, number of points per 1 length
         self.expand(corners, acc)
         self.corners: List[Point] = corners  # a list of all corners of the museum
@@ -13,7 +18,7 @@ class Museum:
         self.guards_points: Set[Point] = set()  # a set of all points that can have a guard
         self.wall_points: Set[Point] = set()  # a st of all points that are on a wall
         self.net: Set[Point] = set()  # a set of all points
-        self.create_net()  # call the map creation
+        self.create_net()  # call the museum creation
 
     def create_walls(self, corners: List[Point]) -> List[Line]:
         """
@@ -24,6 +29,14 @@ class Museum:
         for i in range(len(corners)):
             # create a line from the point and the one before it. also works for the last pair of 0 and last(-1)
             walls.append(Line(corners[i - 1], corners[i]))
+        # check if all connected walls are parallel to one of the axis
+        for wall in walls:
+            if wall.slope() != 0 and wall.slope() != inf:
+                raise Exception("all walls should be parallel to x axis or y axis")
+        # check if all connected walls do not have the same slope
+        for i in range(len(walls)):
+            if walls[i - 1].slope() == walls[i].slope():
+                raise Exception("consecutive walls should have different slope")
         return walls
 
     def create_net(self) -> None:
@@ -39,30 +52,50 @@ class Museum:
         :return: a set of all wall points of the museum
         """
         wall_points: Set[Point] = set()  # init the set
+        corners_coordinates: Dict[Tuple[int, int], Point] = dict()  # a dict for corners
         for i, wall in enumerate(self.walls):
             # for each wall, go over all valid points along it and add them to the set
             start, end = wall.p1, wall.p2
             # add the first of the points, which is a corner, and has 2 walls in its walls tuple
-            wall_points.add(Point(start.x, start.y, (wall, self.walls[i - 1])))
+            # in case a corner appears twice on the perimeter, we want to have all of its walls
+            if start.get_coordinates() not in corners_coordinates:
+                # first time seeing for the point. add to wall_points and the dict
+                new_start = Point(start.x, start.y, (wall, self.walls[i - 1]))
+                wall_points.add(new_start)
+                corners_coordinates[start.get_coordinates()] = new_start
+            else:
+                # first time seeing for the point. update the point's walls
+                start_already_defined = corners_coordinates[start.get_coordinates()]
+                start_already_defined.walls_on = tuple(list(start_already_defined.walls_on) + [wall, self.walls[i - 1]])
+            # now move on to the other points on the wall
             while abs(start.x - end.x) > 1 or abs(start.y - end.y) > 1:
                 # move along the wall in the direction needed: up/down/left/right
-                if start.x == end.x:
-                    if start.y < end.y:
-                        # move the point one step up
-                        start = Point(start.x, start.y + 1, (wall,))
-                    else:
-                        # move the point one step down
-                        start = Point(start.x, start.y - 1, (wall,))
-                else:  # y equal
-                    if start.x < end.x:
-                        # move the point one step right
-                        start = Point(start.x + 1, start.y, (wall,))
-                    else:
-                        # move the point one step left
-                        start = Point(start.x - 1, start.y, (wall,))
+                start = self.get_next_wall_point(start, end, wall)
                 # add the point with the current wall in the walls tuple
                 wall_points.add(Point(start.x, start.y, (wall,)))
         return wall_points
+
+    def get_next_wall_point(self, curr: Point, end: Point, wall: Line) -> Point:
+        """
+        :param wall: wall of the points
+        :param curr: current point
+        :param end: end point
+        :return: the next wall point
+        """
+        if curr.x == end.x:
+            if curr.y < end.y:
+                # move the point one step up
+                return Point(curr.x, curr.y + 1, (wall,))
+            else:
+                # move the point one step down
+                return Point(curr.x, curr.y - 1, (wall,))
+        else:  # y equal
+            if curr.x < end.x:
+                # move the point one step right
+                return Point(curr.x + 1, curr.y, (wall,))
+            else:
+                # move the point one step left
+                return Point(curr.x - 1, curr.y, (wall,))
 
     def get_inner_neighbors(self, p: Point, wall_points: Dict[Tuple[int, int], Point]) -> Dict[Tuple[int, int], Point]:
         """

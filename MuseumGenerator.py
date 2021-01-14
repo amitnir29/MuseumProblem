@@ -1,163 +1,26 @@
-from collections import defaultdict
-from typing import List, Optional, Tuple, Dict, FrozenSet
+from __future__ import annotations
+from typing import List, Tuple, Dict, FrozenSet
+import random
 
 from Museum import Museum
 from Point import Point
+from Structure import Structure, Square
 
 
-# def generate(max_walls: int, acc: int=2) -> Optional[Museum]:
-#     walls: List[Line] = []
-#     start = Point(0, 0)
-#
-#     direction = get_rand_direction()
-#     curr: Point = start.add_coordinates(direction * get_rand_length())
-#     last_point = curr
-#     walls.append(Line(start, curr))
-#     for _ in range(max_walls):
-#         direction = get_rand_direction(direction)
-#         curr = curr.add_coordinates(direction * get_rand_length())
-#         new_wall = Line(last_point, curr)
-#         last_point = curr
-#         if intersects(walls[:-1], new_wall) is not None:
-#             walls.append(new_wall)
-#             break
-#         walls.append(new_wall)
-#     else:
-#         return None
-#     # get the museum
-#     intersecting_wall_index = intersects(walls[:-2], walls[-1])
-#     intersecting_walls: Tuple[Line, Line] = (walls[-1], walls[intersecting_wall_index])
-#     inter_point = intersecting_walls[0].walls_intersection_point(intersecting_walls[1])
-#     walls = [Line(inter_point, walls[intersecting_wall_index].p2)] + \
-#             walls[intersecting_wall_index + 1:-1] + [Line(walls[-1].p1, inter_point)]
-#     # get points
-#     corners: List[Point] = list()
-#     for wall in walls:
-#         corners.append(wall.p1)
-#     return Museum(corners, acc)
-#
-#
-# def get_rand_direction(prev: Tuple[int, int] = None) -> Tuple[int, int]:
-#     RIGHT: Tuple[int, int] = (1, 0)
-#     LEFT: Tuple[int, int] = (-1, 0)
-#     UP: Tuple[int, int] = (0, 1)
-#     DOWN: Tuple[int, int] = (0, -1)
-#     directions: List[Tuple[int, int]] = [RIGHT, LEFT, UP, DOWN]
-#     if prev is None:
-#         return random.choice(directions)
-#     if prev in directions[:2]:
-#         return random.choice(directions[2:])
-#     if prev in directions[2:]:
-#         return random.choice(directions[:2])
-#     return None
-#
-#
-# def get_rand_length() -> int:
-#     return random.randint(1, 10)
-#
-#
-# def intersects(walls: List[Line], new_wall: Line) -> Optional[int]:
-#     for i, wall in enumerate(walls):
-#         if new_wall.walls_intersection_point(wall) is not None:
-#             return i
-#     return None
-
-class Square:
-    def __init__(self, points: Tuple[Point, Point, Point, Point]):
-        self.points: Tuple[Point, Point, Point, Point] = points
-        self.__are_connected: Dict[FrozenSet[Point, Point], bool] = self.create_connected_dict()
-
-    def get_neighbors(self, point: Point) -> Optional[Tuple[Point, Point]]:
-        """
-        :param point: input point
-        :return: the neighbor points of the input point in the square
-        """
-        if point not in self.points:
-            return None
-        index = self.points.index(point)
-        # return the prev and next points
-        return self.points[index - 1], self.points[index + 1]
-
-    def get_connected_value(self, p1, p2) -> Optional[bool]:
-        """
-        getter for a points pair in the dict
-        :param p1: one point
-        :param p2: second point
-        :return: the value of the pair in the dict, None if not in the dict
-        """
-        pair = frozenset((p1, p2))
-        if pair not in self.__are_connected:
-            return None
-        return self.__are_connected[pair]
-
-    def set_connected_value(self, p1, p2, value):
-        """
-        setter for a points pair in the dict
-        :param p1: one point
-        :param p2: second point
-        :param value: new value for the pair in the dict
-        """
-        self.__are_connected[frozenset((p1, p2))] = value
-
-    def create_connected_dict(self) -> Dict[FrozenSet[Point, Point], bool]:
-        """
-        :return: a dict from each neighbor points to False
-        """
-        res: Dict[FrozenSet[Point, Point], bool] = dict()
-        for i in range(len(self.points)):
-            self.set_connected_value(self.points[i], self.points[i - 1], False)
-        return res
-
-
-class Structure:
-    def __init__(self, allow_big_areas=True):
-        self.squares: List[Square] = list()
-        self.allow_big_areas: bool = allow_big_areas  # TODO
-
-    def append(self, square: Square):
-        """
-        add the square to the list of squares
-        :param square: a new square
-        """
-        self.squares.append(square)
-
-    def get_all_points(self) -> Dict[Point, List[Square]]:
-        """
-        :return: a dict from each point to the squares it is on
-        """
-        results: Dict[Point, List[Square]] = defaultdict(list)
-        for square in self.squares:
-            for p in square.points:
-                results[p].append(square)
-        return results
-
-    def squares_on(self, p1, p2) -> List[Square]:
-        """
-        :param p1: one point
-        :param p2: second point
-        :return: a list of squares that the line (p1,p2) is on them
-        """
-        result: List[Square] = list()
-        for square in self.squares:
-            if square.get_connected_value(p1, p2) is not None:
-                result.append(square)
-        return result
-
-
-def generate(area, acc, allow_big_areas=True) -> Museum:
+def generate(min_area: int, acc: int, more_unified: bool = True) -> Museum:
     """
     the main method for the file
-    :param area: the area of the wanted museum
+    :param min_area: the area of the wanted museum
     :param acc: the acc parameter for the museum
-    :param allow_big_areas: boolean for the shape of the museum
+    :param more_unified: should be more unified or more fractured
     :return: the generated museum
     """
-    structure: Structure = Structure(allow_big_areas)
+    structure: Structure = Structure(more_unified)
     # start square
     start: Square = Square((Point(0, 0), Point(1, 0), Point(1, 1), Point(0, 1)))
     structure.append(start)
     # add area-1 squares
-    for _ in range(area - 1):
+    for _ in range(min_area - 1):
         add_new_square(structure)
     # convert the squares structure to a points list
     points: List[Point] = get_points_from_structure(structure)
@@ -165,12 +28,53 @@ def generate(area, acc, allow_big_areas=True) -> Museum:
     return Museum(points, acc)
 
 
-def add_new_square(structure: Structure) -> None:  # TODO
+def add_new_square(structure: Structure):
     """
     add a new square to the structure
     :param structure: the structure to add a new square to
+    :return: True is succeeded
     """
-    return None
+    """
+    1. choose a square chosen_square with a free line to add a new square to
+    2. create the new square Sn
+    3. go over the lines of Sn, if a line exists in another square S',
+        update the are_connected dicts of Sn and S' and update the line in both dicts to True
+    """
+    # part 1
+    chosen_square: Square = random.choice(structure.available_squares)
+    chosen_line: FrozenSet[Point, Point] = \
+        random.choice([k for k, v in chosen_square.are_connected.items() if v is None])
+    # part 2
+    # check if line is vertical or horizontal:
+    line_points: Tuple[Point, ...] = tuple(chosen_line)
+    if line_points[0].x == line_points[1].x:
+        # this is vertical
+        lower_point, upper_point = list(sorted(line_points, key=lambda p: p.y))
+        new_point1 = Point(upper_point.x - 1, upper_point.y)
+        new_point2 = Point(lower_point.x - 1, lower_point.y)
+        if new_point1 in chosen_square.points:
+            new_point1.x += 2
+            new_point2.x += 2
+        new_square = Square((upper_point, new_point1, new_point2, lower_point))
+    else:
+        # this is horizontal
+        left_point, right_point = list(sorted(line_points, key=lambda p: p.x))
+        new_point1 = Point(left_point.x, left_point.y - 1)
+        new_point2 = Point(right_point.x, right_point.y - 1)
+        if new_point1 in chosen_square.points:
+            new_point1.y += 2
+            new_point2.y += 2
+        new_square = Square((left_point, new_point1, new_point2, right_point))
+    # part 3
+    # go over squares and add relations of squares:
+    for line in new_square.are_connected:
+        point1, point2 = tuple(line)
+        for square in structure.squares:
+            if line in square.are_connected:
+                new_square.set_connected_value(point1, point2, square)
+                square.set_connected_value(point1, point2, new_square)
+    # add the square to the structure
+    structure.append(new_square)
 
 
 def get_points_from_structure(structure: Structure) -> List[Point]:
@@ -215,16 +119,12 @@ def get_points_from_structure(structure: Structure) -> List[Point]:
         else:
             p1 = curr_square.get_neighbors(curr_point)[0]
         # now check if this line is also on another square
-        squares_on = structure.squares_on(curr_point, p1)
-        if len(squares_on) == 1:
+        if s1.get_connected_value(curr_point, p1) is None:
             # option 1. we should go to P1
             curr_point = p1
             continue
         # else, get the other square (S2)
-        if squares_on[0] == s1:
-            s2 = squares_on[1]
-        else:
-            s2 = squares_on[0]
+        s2 = s1.get_connected_value(curr_point, p1)
         # get the next potential point (P2)
         neighbors = s2.get_neighbors(curr_point)
         if p1 == neighbors[0]:
@@ -232,16 +132,12 @@ def get_points_from_structure(structure: Structure) -> List[Point]:
         else:
             p2 = neighbors[0]
         # check if the new line is on two squares:
-        squares_on = structure.squares_on(curr_point, p2)
-        if len(squares_on) == 1:
+        if s2.get_connected_value(curr_point, p2) is None:
             curr_point = p2
             curr_square = s2
             continue
         # else, get the 3rd square (P3)
-        if squares_on[0] == s2:
-            s3 = squares_on[1]
-        else:
-            s3 = squares_on[0]
+        s3 = s2.get_connected_value(curr_point, p2)
         # now get the other neighbor:
         neighbors = s3.get_neighbors(curr_point)
         if p2 == neighbors[0]:
@@ -251,6 +147,22 @@ def get_points_from_structure(structure: Structure) -> List[Point]:
         # finish, we got P3
         curr_point = p3
         curr_square = s3
+    # now we do not want points that are in the middle of lines:
+    return remove_middle_points(result_points)
+
+
+def remove_middle_points(points: List[Point]) -> List[Point]:
+    """
+    :param points: result points that have points in middle of lines
+    :return: the list with only corner points
+    """
+    result_points: List[Point] = list()
+    for i, p in enumerate(points):
+        if points[i - 1].x == p.x == points[(i + 1) % len(points)].x:
+            continue
+        if points[i - 1].y == p.y == points[(i + 1) % len(points)].y:
+            continue
+        result_points.append(p)
     return result_points
 
 

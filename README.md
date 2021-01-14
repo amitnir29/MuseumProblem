@@ -11,6 +11,6 @@ In order to solve this problem we wrote code in python which represents the muse
 We used an optimization package called "pulp" in order to solve this problem with Objective, Variables and Constraints we have defined.
 
 ## Optimization
-* The problem is a binary problen where each "inner" point has a Variable that represents wether there is a guard there or not.
+* The problem is a binary problem where each "inner" point has a Variable that represents whether there is a guard there or not.
 * The Constraints are for each point, the sum of the Variables of all the point who see it will be >= 1 (means it will be seen).
 * And lastly, the Objective is the sum of all Variables (number of guards), which we wish to minimize.

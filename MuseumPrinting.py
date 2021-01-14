@@ -6,8 +6,9 @@ from Museum import Museum
 from Point import Point
 
 
-def print_museum(museum: Museum):
+def print_museum(museum: Museum, to_file: str = None):
     """
+    :param to_file: file to print the museum to. default is console.
     :param museum: the museum to print
     print the museum grid
     """
@@ -15,6 +16,7 @@ def print_museum(museum: Museum):
     wall_coordinates: Dict[Tuple[int, int], Point] = museum.coordinates_dict(museum.wall_points)
     min_x, min_y, max_x, max_y = __get_borders(museum)
     # go over the range of possible points in the museum
+    museum_print = ""
     for i in range(max_y, min_y - 1, -1):
         for j in range(min_x, max_x + 1):
             p = j, i
@@ -23,15 +25,20 @@ def print_museum(museum: Museum):
                 if p in wall_coordinates:
                     for p2 in museum.get_wall_points():
                         if p2.x == p[0] and p2.y == p[1] and len(p2.walls_on) == 2:
-                            print("8 ", end="")
+                            museum_print += "8 "
                             break
                     else:
-                        print("0 ", end="")
+                        museum_print += "0 "
                 else:
-                    print("+ ", end="")
+                    museum_print += "+ "
             else:
-                print("- ", end="")
-        print()
+                museum_print += "  "
+        museum_print += "\n"
+    if to_file is None:
+        print(museum_print)
+    else:
+        with open(to_file, "w") as f:
+            f.write(museum_print)
 
 
 def print_seen(museum, point_x: int, point_y: int):
@@ -81,7 +88,7 @@ def print_seen(museum, point_x: int, point_y: int):
                         else:
                             print("+ ", end="")
                 else:
-                    print("- ", end="")
+                    print("  ", end="")
         print()
 
 
@@ -93,7 +100,7 @@ def print_guards(museum, guards: Set[Point]):
     """
     net_coordinates: Dict[Tuple[int, int], Point] = museum.coordinates_dict(museum.net)
     wall_coordinates: Dict[Tuple[int, int], Point] = museum.coordinates_dict(museum.wall_points)
-    guards_cooridnates: Dict[Tuple[int, int], Point] = museum.coordinates_dict(guards)
+    guards_coordinates: Dict[Tuple[int, int], Point] = museum.coordinates_dict(guards)
     min_x, min_y, max_x, max_y = __get_borders(museum)
     # go over the range of possible points in the museum
     for i in range(max_y, min_y - 1, -1):
@@ -109,12 +116,12 @@ def print_guards(museum, guards: Set[Point]):
                     else:
                         print("0 ", end="")
                 else:
-                    if p in guards_cooridnates:
+                    if p in guards_coordinates:
                         print(bcolors.OKGREEN + "G " + bcolors.ENDC, end="")
                     else:
                         print("+ ", end="")
             else:
-                print("- ", end="")
+                print("  ", end="")
         print()
 
 
