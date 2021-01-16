@@ -26,10 +26,10 @@ def test_object(m: Museum, filepath: str):
     solve for input museum. save the solution object:
     (
     museum,
-    naive optim guard points unnormialized,
+    naive optim guard points un normalized,
     naive optim guard points normalized as tuples,
     naive optim runtime,
-    greedy algo guard points unnormialized,
+    greedy algo guard points un normalized,
     greedy algo guard points normalized as tuples,
     greedy algo runtime,
     )
@@ -54,7 +54,7 @@ def test_object(m: Museum, filepath: str):
     pickle_to_file(result_object, filepath)
 
 
-def analize_results(number_of_files):
+def analyze_results(number_of_files):
     """
     :param number_of_files: number of files we generated. the files' names are from t0 to t(nof-1)
     """
@@ -68,11 +68,11 @@ def analize_results(number_of_files):
     greedy_results = [(i, len(o[4]), o[6]) for i, o in enumerate(results)]
     print(naive_results)
     print(greedy_results)
-    line1, = plt.plot([x[0] for x in naive_results], [x[1] for x in naive_results],c="r")
-    line2, = plt.plot([x[0] for x in greedy_results], [x[1] for x in greedy_results],c="g")
+    line1, = plt.plot([x[0] for x in naive_results], [x[1] for x in naive_results], c="r")
+    line2, = plt.plot([x[0] for x in greedy_results], [x[1] for x in greedy_results], c="g")
     plt.xlabel("museum index")
     plt.ylabel("number of guards")
-    plt.legend((line1,line2),("naive","greedy"))
+    plt.legend((line1, line2), ("naive", "greedy"))
     plt.show()
     line1, = plt.plot([x[0] for x in naive_results], [x[2] for x in naive_results], c="r")
     line2, = plt.plot([x[0] for x in greedy_results], [x[2] for x in greedy_results], c="g")

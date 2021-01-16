@@ -7,7 +7,7 @@ from SavedMuseum import create_saved_museum
 from SolveMuseum import work_for_museum, work_for_saved_museum
 from MuseumGenerator import generate
 from pickle_help import pickle_from_file
-from optims_test import analize_results
+from optims_test import analyze_results
 
 if __name__ == '__main__':
-    analize_results(123)
+    analyze_results(123)
